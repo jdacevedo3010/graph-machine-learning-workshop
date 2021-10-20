@@ -121,7 +121,8 @@ def train(g, features, labels, train_mask, test_mask, epochs, model):
                 e, loss, val_acc, best_val_acc, test_acc, best_test_acc))
     
     #Check results on test set
-    y_pred_probas = model(g, features).detach().numpy()
+    logits = model(g, features)
+    y_pred_probas = F.softmax(logits,dim=1).detach().numpy()
     y_pred_probas = y_pred_probas[test_mask]
     y_preds = y_pred_probas[:,1]
     model_name = 'GCN'
@@ -130,7 +131,7 @@ def train(g, features, labels, train_mask, test_mask, epochs, model):
     dict_results = {'Model':model_name, 'AUC':auc, 'F1 Score':f1, 'Precision':prec, 'Recall':recall}
     results_df = pd.DataFrame(columns=['Model','AUC','F1 Score','Precision','Recall'])
     results_df = results_df.append(dict_results, ignore_index=True)
-    return results_df
+    return results_df, y_pred_probas
 
 #We start by using the same edges df but transforming the from and to columns into arrays
 edges_df = pd.read_csv('data/new_edges_workshop.csv')
@@ -142,6 +143,6 @@ G_dgl = dgl.graph((src,snk))
 G_dgl.add_edges(G_dgl.nodes(), G_dgl.nodes())
 
 epochs = 100
-results_df = train(G_dgl, X, y, train_mask, test_mask, epochs, model)
+results_df, y_pred_probas = train(G_dgl, X, y, train_mask, test_mask, epochs, model)
 
 print('This is a test')
